@@ -226,6 +226,59 @@
           "verification": "curl -s https://your-domain.com/api/market/stocks | python3 -c \"import sys,json; d=json.load(sys.stdin); assert len(d) > 100\""
         }
       ]
+    },
+    {
+      "id": "phase-7",
+      "name": "视觉优化专项",
+      "status": "in-progress",
+      "progress": "25%",
+      "tasks": [
+        {
+          "id": "7.1",
+          "name": "恢复 9 级真渐变色板",
+          "status": "completed",
+          "priority": "high",
+          "note": "解决 4 绿同 4 红同色板拍平问题，红涨绿跌 A 股风格",
+          "verification": "yarn test && 肉眼确认热力梯度可辨",
+          "files_to_modify": [
+            "app/utils/color.ts",
+            "app/utils/__tests__/color.test.ts"
+          ]
+        },
+        {
+          "id": "7.2",
+          "name": "Tooltip 与 K 线弹窗错位",
+          "status": "pending",
+          "priority": "high",
+          "verification": "yarn test && 肉眼确认两面板不重叠",
+          "files_to_modify": [
+            "app/components/TreeMap/index.vue",
+            "app/components/KlineChart/KlinePopup.vue"
+          ]
+        },
+        {
+          "id": "7.3",
+          "name": "行业分组标题带",
+          "status": "pending",
+          "priority": "high",
+          "verification": "yarn test && 肉眼确认 12 板块行业名可见",
+          "files_to_modify": [
+            "app/composables/useTreeMapLayout.ts",
+            "app/composables/useCanvasRender.ts"
+          ]
+        },
+        {
+          "id": "7.4",
+          "name": "Tooltip 视口钳制（接 computeTooltipPosition）",
+          "status": "pending",
+          "priority": "high",
+          "verification": "yarn test && hover 边缘股票确认 Tooltip 不被截断",
+          "files_to_modify": [
+            "app/components/TreeMap/index.vue",
+            "app/composables/useTooltipPosition.ts"
+          ]
+        }
+      ]
     }
   ],
   "metrics": {

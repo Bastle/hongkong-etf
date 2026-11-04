@@ -1,15 +1,16 @@
-// 9 步对称色板：绿(跌) → 灰(平) → 红(涨)
+// 9 步对称色板：绿(跌) → 灰(平) → 红(涨)  ← A 股风格：红涨绿跌
 // 红绿饱和度/亮度对称，视觉更平衡
+// 中间调可辨：mildUp/mildDown 与 flat 明显区分，中等涨跌之间可区分
 const PALETTE = [
-  '#27ae60', // extremeDown  index 0 — 纯绿
-  '#27ae60', // highDown     index 1 — 亮绿
-  '#27ae60', // down         index 2 — 绿青
-  '#27ae60', // mildDown     index 3 — 浅绿
-  '#aab7b8', // flat         index 4 — 中性灰
-  '#a93226', // mildUp       index 5 — 浅红灰
-  '#a93226', // up           index 6 — 亮红
-  '#a93226', // highUp       index 7 — 深红
-  '#a93226', // extremeUp    index 8 — 暗红
+  '#1b5e20', // extremeDown  index 0 — 墨绿（暴跌）
+  '#2e7d32', // highDown     index 1 — 深绿（大跌）
+  '#4caf50', // down         index 2 — 绿（中跌）
+  '#69f0ae', // mildDown     index 3 — 浅绿（小跌）
+  '#8c8c8c', // flat         index 4 — 中性灰（比原 #aab7b8 深一档，提高白字对比）
+  '#ff8a80', // mildUp       index 5 — 浅红（小涨）
+  '#e53935', // up           index 6 — 亮红（中涨）
+  '#c62828', // highUp       index 7 — 深红（大涨）
+  '#b71c1c', // extremeUp    index 8 — 暗红（暴涨）
 ]
 
 /**
