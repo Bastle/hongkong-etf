@@ -1,0 +1,76 @@
+# --- 依赖 ---
+node_modules/
+.pnp
+.pnp.js
+
+# --- Nuxt 构建产物 ---
+.nuxt/
+.output/
+dist/
+.data/
+
+# --- 环境变量（含敏感信息，禁止提交）---
+.env
+.env.*
+!.env.example
+
+# --- 日志 ---
+logs/
+*.log
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+pnpm-debug.log*
+lerna-debug.log*
+
+# --- 测试与覆盖率 ---
+coverage/
+*.lcov
+.nyc_output/
+playwright-report/
+test-results/
+blob-report/
+.playwright/
+
+# --- TypeScript ---
+*.tsbuildinfo
+
+# --- 缓存与临时文件 ---
+.cache/
+.temp/
+.tmp/
+.eslintcache
+
+# --- Vercel ---
+.vercel/
+
+# --- 编辑器 / IDE ---
+.vscode/*
+!.vscode/extensions.json
+!.vscode/settings.json
+.idea/
+*.swp
+*.swo
+*~
+.project
+.classpath
+.settings/
+
+# --- 操作系统 ---
+.DS_Store
+.DS_Store?
+._*
+.Spotlight-V100
+.Trashes
+ehthumbs.db
+Thumbs.db
+desktop.ini
+
+# --- 本地私有笔记（可选，如需保留请删除此行）---
+*.local.md
+
+# --- 本地中文规划文档（不提交）---
+/docs/港股热力图产品开发规范.md
+/docs/港股热力图分步开发计划.md
+/docs/港股热力图优化意见分析.md
+/docs/52etf.site完整技术分析.md

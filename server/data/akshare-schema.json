@@ -1,0 +1,7 @@
+{
+  "status": "failed",
+  "error": "('Connection aborted.', RemoteDisconnected('Remote end closed connection without response'))",
+  "error_type": "ConnectionError",
+  "response_time_seconds": 4.82,
+  "note": "东方财富 API (eastmoney.com) 在当前网络环境不可用，akshare 底层依赖此 API"
+}

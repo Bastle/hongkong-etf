@@ -1,0 +1,238 @@
+{
+  "project": "港股热力图",
+  "version": "0.9",
+  "lastUpdated": "2026-05-25",
+  "phases": [
+    {
+      "id": "phase-0",
+      "name": "数据源验证",
+      "status": "completed",
+      "progress": "100%",
+      "tasks": [
+        {
+          "id": "0.1",
+          "name": "akshare API 验证",
+          "status": "completed",
+          "note": "东方财富 API 不可用，已验证"
+        },
+        {
+          "id": "0.2",
+          "name": "腾讯 API 验证",
+          "status": "completed",
+          "note": "响应时间 ~0.08s"
+        }
+      ]
+    },
+    {
+      "id": "phase-1",
+      "name": "数据层",
+      "status": "completed",
+      "progress": "100%",
+      "tasks": [
+        {
+          "id": "1.1",
+          "name": "Nuxt 3 项目初始化",
+          "status": "completed"
+        },
+        {
+          "id": "1.2",
+          "name": "腾讯 API 集成",
+          "status": "completed",
+          "note": "主数据源"
+        },
+        {
+          "id": "1.3",
+          "name": "数据规范化 + 降级策略",
+          "status": "completed"
+        },
+        {
+          "id": "1.4",
+          "name": "新浪财经备用数据源",
+          "status": "completed"
+        },
+        {
+          "id": "1.5",
+          "name": "缓存 + 限流",
+          "status": "completed",
+          "note": "8s TTL, 令牌桶算法"
+        }
+      ]
+    },
+    {
+      "id": "phase-2",
+      "name": "布局层",
+      "status": "completed",
+      "progress": "100%",
+      "tasks": [
+        {
+          "id": "2.1",
+          "name": "HSCI 行业分类数据",
+          "status": "completed",
+          "note": "12 个板块"
+        },
+        {
+          "id": "2.2",
+          "name": "D3 treemap 基础布局",
+          "status": "completed"
+        },
+        {
+          "id": "2.3",
+          "name": "布局参数调优",
+          "status": "completed"
+        },
+        {
+          "id": "2.4",
+          "name": "布局数据 + 颜色计算",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "phase-3",
+      "name": "渲染层",
+      "status": "completed",
+      "progress": "100%",
+      "tasks": [
+        {
+          "id": "3.1",
+          "name": "主 Canvas 渲染",
+          "status": "completed",
+          "note": "Top 200 渐进式渲染"
+        },
+        {
+          "id": "3.2",
+          "name": "剩余股票 + 增量渲染",
+          "status": "completed"
+        },
+        {
+          "id": "3.3",
+          "name": "Hover Canvas + 高亮",
+          "status": "completed",
+          "note": "双 Canvas 架构"
+        },
+        {
+          "id": "3.4",
+          "name": "Tooltip",
+          "status": "completed"
+        },
+        {
+          "id": "3.5",
+          "name": "复合组件 + 响应式",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "phase-4",
+      "name": "交互层",
+      "status": "in-progress",
+      "progress": "60%",
+      "tasks": [
+        {
+          "id": "4.1",
+          "name": "K 线图弹窗",
+          "status": "completed",
+          "note": "lightweight-charts"
+        },
+        {
+          "id": "4.2",
+          "name": "市场切换器",
+          "status": "completed"
+        },
+        {
+          "id": "4.3",
+          "name": "自动刷新",
+          "status": "completed",
+          "note": "8s 间隔 + 随机抖动"
+        },
+        {
+          "id": "4.4",
+          "name": "截图分享",
+          "status": "completed"
+        },
+        {
+          "id": "4.5",
+          "name": "P0 集成 + 监控",
+          "status": "pending",
+          "priority": "high",
+          "verification": "curl -s http://localhost:3000/api/market/stocks | python3 -c \"import sys,json; d=json.load(sys.stdin); assert len(d) > 100\"",
+          "files_to_modify": [
+            "server/api/market/stocks.get.ts",
+            "app/composables/useMarketData.ts"
+          ]
+        }
+      ]
+    },
+    {
+      "id": "phase-5",
+      "name": "P1 功能",
+      "status": "completed",
+      "progress": "100%",
+      "tasks": [
+        {
+          "id": "5.1",
+          "name": "互联互通筛选",
+          "status": "completed"
+        },
+        {
+          "id": "5.2",
+          "name": "南向资金数据",
+          "status": "completed"
+        },
+        {
+          "id": "5.3",
+          "name": "南向资金覆盖层",
+          "status": "completed"
+        },
+        {
+          "id": "5.4",
+          "name": "AH 溢价视图",
+          "status": "completed"
+        }
+      ]
+    },
+    {
+      "id": "phase-6",
+      "name": "部署上线",
+      "status": "pending",
+      "progress": "0%",
+      "tasks": [
+        {
+          "id": "6.1",
+          "name": "部署配置",
+          "status": "pending",
+          "priority": "high",
+          "note": "Vercel",
+          "verification": "vercel deploy --prod --yes",
+          "files_to_modify": [
+            "nuxt.config.ts",
+            ".vercelignore"
+          ]
+        },
+        {
+          "id": "6.2",
+          "name": "SEO + 监控",
+          "status": "pending",
+          "verification": "curl -s https://your-domain.com | grep -q '<meta name=\"description\"'",
+          "files_to_modify": [
+            "app.vue",
+            "nuxt.config.ts"
+          ]
+        },
+        {
+          "id": "6.3",
+          "name": "生产验证",
+          "status": "pending",
+          "verification": "curl -s https://your-domain.com/api/market/stocks | python3 -c \"import sys,json; d=json.load(sys.stdin); assert len(d) > 100\""
+        }
+      ]
+    }
+  ],
+  "metrics": {
+    "首屏渲染": "≤ 1.5s",
+    "数据获取": "≤ 90s",
+    "刷新耗时": "≤ 200ms",
+    "内存占用": "≤ 150MB",
+    "交互响应": "≤ 100ms"
+  }
+}
