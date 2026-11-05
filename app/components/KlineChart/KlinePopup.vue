@@ -12,6 +12,7 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import { computeTooltipPosition } from '~/composables/useTooltipPosition'
 
 const $fetch = globalThis.$fetch
 
@@ -36,22 +37,18 @@ let createChartFn: any = null
 let CandlestickSeriesDef: any = null
 let initDone = false
 
-// 浮动面板定位：确保不超出视口
+// 浮动面板定位：确保不超出视口（V-04: 统一使用 computeTooltipPosition）
 const floatStyle = computed(() => {
   const panelW = 320
   const panelH = 260
-  const margin = 12
-  let left = props.x + margin
-  let top = props.y + margin
-
-  if (typeof window !== 'undefined') {
-    if (left + panelW > window.innerWidth) left = props.x - panelW - margin
-    if (top + panelH > window.innerHeight) top = props.y - panelH - margin
-    if (left < 0) left = 0
-    if (top < 0) top = 0
+  if (typeof window === 'undefined') {
+    return { left: `${props.x + 12}px`, top: `${props.y + 12}px` }
   }
-
-  return { left: `${left}px`, top: `${top}px` }
+  const pos = computeTooltipPosition(props.x, props.y, panelW, panelH, {
+    width: window.innerWidth,
+    height: window.innerHeight,
+  })
+  return { left: `${pos.x}px`, top: `${pos.y}px` }
 })
 
 async function fetchData() {

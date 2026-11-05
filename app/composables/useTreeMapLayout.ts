@@ -1,7 +1,7 @@
 import { computed, type Ref } from 'vue'
 import { hierarchy, treemap, type HierarchyRectangularNode } from 'd3-hierarchy'
 import type { HKStockQuote, SectorData, TreeNode } from '../types/market'
-import { getHeatColor, getPremiumColor } from '../utils/color'
+import { getHeatColor } from '../utils/color'
 
 export interface TreeMapOptions {
   width: number
@@ -115,6 +115,42 @@ export function filterSmallLeaves(
     const h = leaf.y1 - leaf.y0
     return w >= minSize && h >= minSize
   })
+}
+
+/**
+ * 行业分组矩形（用于绘制分组标题带）
+ */
+export interface SectorRect {
+  name: string
+  x0: number
+  y0: number
+  x1: number
+  y1: number
+  avgChange: number
+  stockCount: number
+}
+
+/**
+ * 从 D3 层级中提取行业分组矩形
+ */
+export function getSectorRects(
+  root: HierarchyRectangularNode<SectorNode>,
+): SectorRect[] {
+  return root.children?.map(node => {
+    const stocks = node.leaves().map(l => (l.data as any)._stock as HKStockQuote)
+    const avgChange = stocks.length > 0
+      ? stocks.reduce((sum, s) => sum + s.changePercent, 0) / stocks.length
+      : 0
+    return {
+      name: node.data.name,
+      x0: node.x0,
+      y0: node.y0,
+      x1: node.x1,
+      y1: node.y1,
+      avgChange,
+      stockCount: stocks.length,
+    }
+  }) ?? []
 }
 
 /**

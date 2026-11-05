@@ -11,10 +11,12 @@
 <script setup lang="ts">
 import { ref, watch, onMounted, nextTick } from 'vue'
 import type { TreeNode, SouthboundFlow } from '~/types/market'
-import { drawTreemap } from '~/composables/useCanvasRender'
+import { drawTreemap, drawSectorLabels } from '~/composables/useCanvasRender'
+import type { SectorRect } from '~/composables/useTreeMapLayout'
 
 const props = defineProps<{
   leaves: TreeNode[]
+  sectors?: SectorRect[]
   width: number
   height: number
   southboundMap?: Map<string, SouthboundFlow>
@@ -33,6 +35,9 @@ function render() {
 
   ctx.setTransform(dpr, 0, 0, dpr, 0, 0)
   drawTreemap(ctx, props.leaves, props.width, props.height, props.southboundMap)
+  if (props.sectors && props.sectors.length > 0) {
+    drawSectorLabels(ctx, props.sectors)
+  }
 }
 
 onMounted(() => {

@@ -1,4 +1,5 @@
 import type { HKStockQuote, TreeNode, SouthboundFlow } from '../types/market'
+import type { SectorRect } from './useTreeMapLayout'
 
 /**
  * 获取市值排名前 N 的股票
@@ -98,6 +99,53 @@ export function drawTreemap(
         ctx.font = `${fontSize * 0.85}px -apple-system, sans-serif`
         ctx.fillText(changeText, centerX, centerY + fontSize * 0.6)
       }
+    }
+  }
+}
+
+/**
+ * 绘制行业分组标题带
+ * 在每个分组的 paddingTop(20px) 区域内绘制行业名 + 涨跌幅均值
+ */
+export function drawSectorLabels(
+  ctx: CanvasRenderingContext2D,
+  sectors: SectorRect[],
+): void {
+  for (const sector of sectors) {
+    const w = sector.x1 - sector.x0
+    const h = sector.y1 - sector.y0
+    if (w < 30 || h < 20) continue
+
+    // 分组外框
+    ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)'
+    ctx.lineWidth = 1
+    ctx.strokeRect(sector.x0, sector.y0, w, h)
+
+    // 行业名（左侧）
+    const labelY = sector.y0 + 10
+    ctx.textAlign = 'left'
+    ctx.textBaseline = 'middle'
+    ctx.font = '11px -apple-system, sans-serif'
+    ctx.fillStyle = '#BBBBBB'
+
+    const maxWidth = w - 8
+    let displayName = sector.name
+    const nameWidth = ctx.measureText(sector.name).width
+    if (nameWidth > maxWidth) {
+      displayName = sector.name.slice(0, Math.floor(sector.name.length * maxWidth / nameWidth))
+    }
+    ctx.fillText(displayName, sector.x0 + 4, labelY)
+
+    // 涨跌幅均值（右侧）
+    if (w >= 80) {
+      const changeText = sector.avgChange >= 0
+        ? `+${sector.avgChange.toFixed(1)}%`
+        : `${sector.avgChange.toFixed(1)}%`
+      ctx.fillStyle = sector.avgChange >= 0
+        ? 'rgba(255, 138, 128, 0.7)'
+        : 'rgba(105, 240, 174, 0.7)'
+      ctx.textAlign = 'right'
+      ctx.fillText(changeText, sector.x1 - 4, labelY)
     }
   }
 }

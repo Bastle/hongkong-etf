@@ -4,6 +4,7 @@
       v-if="layout"
       ref="mainCanvasRef"
       :leaves="layout.leaves"
+      :sectors="layout.sectors"
       :width="width"
       :height="height"
       :southbound-map="southboundMap"
@@ -44,7 +45,8 @@
 import { ref, computed, watch } from 'vue'
 import type { HKStockQuote, SectorData, SouthboundFlow } from '~/types/market'
 import { useElementSize } from '@vueuse/core'
-import { computeLayout, flattenLayout } from '~/composables/useTreeMapLayout'
+import { computeLayout, flattenLayout, getSectorRects } from '~/composables/useTreeMapLayout'
+import { computeTooltipPosition } from '~/composables/useTooltipPosition'
 import { getTopStocks, isMobile, getMobileLimit } from '~/composables/useCanvasRender'
 import { useKlinePrefetch } from '~/composables/useKlinePrefetch'
 import type { TreeNode } from '~/types/market'
@@ -114,6 +116,7 @@ const layout = computed(() => {
   return {
     root,
     leaves: flattenLayout(root, undefined, props.ahColorMap),
+    sectors: getSectorRects(root),
   }
 })
 
@@ -127,18 +130,28 @@ function onHover(leaf: TreeNode | null, x: number, y: number) {
   if (leaf) {
     hoveredStock.value = leaf.data
     tooltipVisible.value = true
-    tooltipX.value = x + 12
-    tooltipY.value = y + 12
+
+    // V-02 + V-04: Tooltip 定位在鼠标右上方 + 视口钳制（避免与 K 线重叠）
+    const TOOLTIP_W = 200
+    const TOOLTIP_H = 130
+    const GAP = 12
+    let tx = x + GAP
+    let ty = y - TOOLTIP_H - GAP
+    if (tx + TOOLTIP_W > window.innerWidth) tx = x - TOOLTIP_W - GAP
+    if (ty < 0) ty = y + GAP
+    if (tx < 0) tx = 0
+    tooltipX.value = tx
+    tooltipY.value = ty
 
     // 立即预取 K 线数据（不等防抖）
     prefetchSingle(leaf.data.code)
 
-    // K-line 浮动面板：防抖 100ms 后显示
+    // V-02: K 线浮动面板定位于鼠标右下方（防抖 100ms 后显示）
     clearKlineDebounce()
     klineDebounceTimer = setTimeout(() => {
       selectedStock.value = leaf.data
-      klineX.value = x + 16
-      klineY.value = y + 16
+      klineX.value = x
+      klineY.value = y
       showKline.value = true
     }, 100)
   } else {

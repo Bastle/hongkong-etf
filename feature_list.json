@@ -230,8 +230,8 @@
     {
       "id": "phase-7",
       "name": "视觉优化专项",
-      "status": "in-progress",
-      "progress": "25%",
+      "status": "completed",
+      "progress": "100%",
       "tasks": [
         {
           "id": "7.1",
@@ -248,8 +248,9 @@
         {
           "id": "7.2",
           "name": "Tooltip 与 K 线弹窗错位",
-          "status": "pending",
+          "status": "completed",
           "priority": "high",
+          "note": "Tooltip 右上、K 线右下错开，避免重叠",
           "verification": "yarn test && 肉眼确认两面板不重叠",
           "files_to_modify": [
             "app/components/TreeMap/index.vue",
@@ -259,22 +260,26 @@
         {
           "id": "7.3",
           "name": "行业分组标题带",
-          "status": "pending",
+          "status": "completed",
           "priority": "high",
+          "note": "在 paddingTop(20px) 区域绘制行业名 + 涨跌幅均值",
           "verification": "yarn test && 肉眼确认 12 板块行业名可见",
           "files_to_modify": [
             "app/composables/useTreeMapLayout.ts",
-            "app/composables/useCanvasRender.ts"
+            "app/composables/useCanvasRender.ts",
+            "app/components/TreeMap/MainCanvas.vue"
           ]
         },
         {
           "id": "7.4",
           "name": "Tooltip 视口钳制（接 computeTooltipPosition）",
-          "status": "pending",
+          "status": "completed",
           "priority": "high",
+          "note": "Tooltip + K 线均接入 computeTooltipPosition，消除重复实现",
           "verification": "yarn test && hover 边缘股票确认 Tooltip 不被截断",
           "files_to_modify": [
             "app/components/TreeMap/index.vue",
+            "app/components/KlineChart/KlinePopup.vue",
             "app/composables/useTooltipPosition.ts"
           ]
         }
