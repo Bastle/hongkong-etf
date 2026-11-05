@@ -1,9 +1,24 @@
 <template>
   <Teleport to="body">
-    <div v-show="visible" class="kline-float" :style="floatStyle">
+    <div v-show="visible && stock" class="kline-float" :style="floatStyle">
       <div class="kline-header">
-        <span class="kline-title">{{ name }} {{ code }}.HK</span>
+        <span class="kline-title">{{ stock?.name }} {{ stock?.code }}.HK</span>
         <span v-if="loading" class="kline-loading-dot"></span>
+      </div>
+      <div v-if="stock" class="kline-info">
+        <div class="kline-price-row">
+          <span class="kline-price">{{ stock.price.toFixed(2) }}</span>
+          <span :class="stock.changePercent >= 0 ? 'up' : 'down'">
+            {{ stock.changePercent >= 0 ? '+' : '' }}{{ stock.changePercent.toFixed(2) }}%
+          </span>
+        </div>
+        <div class="kline-stats">
+          <span>市值 {{ formatMarketCap(stock.marketCap) }}</span>
+          <span>每手 {{ stock.lotSize }}股</span>
+        </div>
+        <div v-if="stock.amount > 0" class="kline-stats">
+          <span>成交额 {{ formatAmount(stock.amount) }}</span>
+        </div>
       </div>
       <div ref="chartContainer" class="kline-chart"></div>
     </div>
@@ -12,13 +27,13 @@
 
 <script setup lang="ts">
 import { ref, computed, watch, onMounted, onUnmounted, nextTick } from 'vue'
+import type { HKStockQuote } from '~/types/market'
 import { computeTooltipPosition } from '~/composables/useTooltipPosition'
 
 const $fetch = globalThis.$fetch
 
 const props = defineProps<{
-  code: string
-  name: string
+  stock: HKStockQuote | null
   visible: boolean
   x: number
   y: number
@@ -28,6 +43,19 @@ const props = defineProps<{
 const emit = defineEmits<{
   (e: 'close'): void
 }>()
+
+function formatMarketCap(cap: number): string {
+  if (cap >= 1e12) return `${(cap / 1e12).toFixed(2)}万亿 HKD`
+  if (cap >= 1e8) return `${(cap / 1e8).toFixed(1)}亿 HKD`
+  return `${cap.toFixed(0)} HKD`
+}
+
+function formatAmount(amount: number): string {
+  if (amount >= 1e12) return `${(amount / 1e12).toFixed(2)}万亿`
+  if (amount >= 1e8) return `${(amount / 1e8).toFixed(1)}亿`
+  if (amount >= 1e4) return `${(amount / 1e4).toFixed(0)}万`
+  return amount.toFixed(0)
+}
 
 const chartContainer = ref<HTMLDivElement>()
 const loading = ref(false)
@@ -52,13 +80,14 @@ const floatStyle = computed(() => {
 })
 
 async function fetchData() {
-  if (!props.code) return
+  const code = props.stock?.code
+  if (!code) return
   loading.value = true
   try {
     // 优先使用客户端预取缓存
     let data = props.cachedData
     if (!data || data.length === 0) {
-      const res = await $fetch(`/api/market/kline?code=${props.code}`) as { data: any[] }
+      const res = await $fetch(`/api/market/kline?code=${code}`) as { data: any[] }
       data = res.data
     }
     if (candleSeries && data && data.length > 0) {
@@ -132,8 +161,8 @@ const chartsReady = (async () => {
   }
 })()
 
-// visible 或 code 变化时：初始化图表 + 获取数据
-watch([() => props.visible, () => props.code], async ([vis, code]) => {
+// visible 或 stock 变化时：初始化图表 + 获取数据
+watch([() => props.visible, () => props.stock?.code], async ([vis, code]) => {
   if (vis && code) {
     await chartsReady
     await nextTick()
@@ -168,6 +197,44 @@ watch([() => props.visible, () => props.code], async ([vis, code]) => {
   color: #ccc;
   font-size: 12px;
   font-weight: 500;
+}
+
+.kline-info {
+  padding: 8px 10px 6px;
+  border-bottom: 1px solid rgba(255, 255, 255, 0.08);
+}
+
+.kline-price-row {
+  display: flex;
+  align-items: baseline;
+  gap: 8px;
+  margin-bottom: 4px;
+}
+
+.kline-price {
+  font-size: 18px;
+  font-weight: 600;
+  color: #fff;
+}
+
+.kline-price-row .up {
+  color: #FF5252;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.kline-price-row .down {
+  color: #69F0AE;
+  font-size: 13px;
+  font-weight: 500;
+}
+
+.kline-stats {
+  display: flex;
+  gap: 12px;
+  font-size: 11px;
+  color: #999;
+  line-height: 1.6;
 }
 
 .kline-loading-dot {

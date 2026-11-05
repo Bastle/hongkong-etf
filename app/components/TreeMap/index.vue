@@ -17,12 +17,6 @@
       @hover="onHover"
       @select="onSelect"
     />
-    <Tooltip
-      :stock="hoveredStock"
-      :visible="tooltipVisible"
-      :x="tooltipX"
-      :y="tooltipY"
-    />
     <div v-if="!layout" class="loading">加载中...</div>
     <div class="refresh-indicator">
       <span class="refresh-dot"></span>
@@ -30,8 +24,7 @@
     <ScreenshotBtn v-if="mainCanvasRef" :canvas-ref="mainCanvasRef.canvasRef" />
     <KlinePopup
       v-show="showKline"
-      :code="selectedStock?.code ?? ''"
-      :name="selectedStock?.name ?? ''"
+      :stock="selectedStock"
       :visible="showKline"
       :x="klineX"
       :y="klineY"
@@ -46,7 +39,6 @@ import { ref, computed, watch } from 'vue'
 import type { HKStockQuote, SectorData, SouthboundFlow } from '~/types/market'
 import { useElementSize } from '@vueuse/core'
 import { computeLayout, flattenLayout, getSectorRects } from '~/composables/useTreeMapLayout'
-import { computeTooltipPosition } from '~/composables/useTooltipPosition'
 import { getTopStocks, isMobile, getMobileLimit } from '~/composables/useCanvasRender'
 import { useKlinePrefetch } from '~/composables/useKlinePrefetch'
 import type { TreeNode } from '~/types/market'
@@ -121,32 +113,12 @@ const layout = computed(() => {
 })
 
 // Hover 状态
-const hoveredStock = ref<HKStockQuote | null>(null)
-const tooltipVisible = ref(false)
-const tooltipX = ref(0)
-const tooltipY = ref(0)
-
 function onHover(leaf: TreeNode | null, x: number, y: number) {
   if (leaf) {
-    hoveredStock.value = leaf.data
-    tooltipVisible.value = true
-
-    // V-02 + V-04: Tooltip 定位在鼠标右上方 + 视口钳制（避免与 K 线重叠）
-    const TOOLTIP_W = 200
-    const TOOLTIP_H = 130
-    const GAP = 12
-    let tx = x + GAP
-    let ty = y - TOOLTIP_H - GAP
-    if (tx + TOOLTIP_W > window.innerWidth) tx = x - TOOLTIP_W - GAP
-    if (ty < 0) ty = y + GAP
-    if (tx < 0) tx = 0
-    tooltipX.value = tx
-    tooltipY.value = ty
-
     // 立即预取 K 线数据（不等防抖）
     prefetchSingle(leaf.data.code)
 
-    // V-02: K 线浮动面板定位于鼠标右下方（防抖 100ms 后显示）
+    // 统一信息面板：防抖 100ms 后显示（信息 + K 线合并）
     clearKlineDebounce()
     klineDebounceTimer = setTimeout(() => {
       selectedStock.value = leaf.data
@@ -155,8 +127,6 @@ function onHover(leaf: TreeNode | null, x: number, y: number) {
       showKline.value = true
     }, 100)
   } else {
-    hoveredStock.value = null
-    tooltipVisible.value = false
     clearKlineDebounce()
     showKline.value = false
   }

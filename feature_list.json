@@ -282,6 +282,19 @@
             "app/components/KlineChart/KlinePopup.vue",
             "app/composables/useTooltipPosition.ts"
           ]
+        },
+        {
+          "id": "7.5",
+          "name": "合并 Tooltip 与 K 线面板",
+          "status": "completed",
+          "priority": "high",
+          "note": "信息上移 K 线下，hover 只弹一个统一信息卡",
+          "verification": "yarn test && 肉眼确认只弹一个面板",
+          "files_to_modify": [
+            "app/components/KlineChart/KlinePopup.vue",
+            "app/components/TreeMap/index.vue",
+            "app/components/TreeMap/Tooltip.vue"
+          ]
         }
       ]
     }
