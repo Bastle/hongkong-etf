@@ -111,14 +111,17 @@ async function fetchData() {
 function initChart() {
   if (!chartContainer.value || !createChartFn) return
 
+  // 宽度兜底：v-show 切换瞬间 clientWidth 可能为 0
+  const chartWidth = chartContainer.value.clientWidth || 318
+
   // 复用已有图表实例
   if (chart) {
-    chart.applyOptions({ width: chartContainer.value.clientWidth })
+    chart.applyOptions({ width: chartWidth })
     return
   }
 
   chart = createChartFn(chartContainer.value, {
-    width: chartContainer.value.clientWidth,
+    width: chartWidth,
     height: 200,
     layout: {
       background: { color: '#1e1e2e' },
@@ -140,6 +143,14 @@ function initChart() {
     borderDownColor: '#30cc5a',
     wickUpColor: '#f63538',
     wickDownColor: '#30cc5a',
+  })
+
+  // 浏览器 paint 后校正宽度（防 v-show 延迟导致宽度为 0）
+  requestAnimationFrame(() => {
+    if (chart && chartContainer.value) {
+      const w = chartContainer.value.clientWidth
+      if (w > 0) chart.applyOptions({ width: w })
+    }
   })
 
   initDone = true
@@ -164,8 +175,15 @@ const chartsReady = (async () => {
 // visible 或 stock 变化时：初始化图表 + 获取数据
 watch([() => props.visible, () => props.stock?.code], async ([vis, code]) => {
   if (vis && code) {
-    await chartsReady
+    try {
+      await chartsReady
+    } catch (e) {
+      console.error('Failed to load lightweight-charts:', e)
+      return
+    }
     await nextTick()
+    // 等一帧确保 v-show 切换后浏览器已 paint
+    await new Promise(r => requestAnimationFrame(r))
     initChart()
     await fetchData()
   }

@@ -288,7 +288,7 @@
           "name": "合并 Tooltip 与 K 线面板",
           "status": "completed",
           "priority": "high",
-          "note": "信息上移 K 线下，hover 只弹一个统一信息卡",
+          "note": "信息上移 K 线下，hover 只弹一个统一信息卡。后续修复：K 线不显示问题（v-show 延迟导致 clientWidth=0），增加宽度兜底 + rAF 校正",
           "verification": "yarn test && 肉眼确认只弹一个面板",
           "files_to_modify": [
             "app/components/KlineChart/KlinePopup.vue",
