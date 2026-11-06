@@ -35,7 +35,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
 
   // 浮动面板定位
   const floatStyle = useMemo(() => {
-    const panelW = 320
+    const panelW = 440
     const panelH = 340
     if (typeof window === 'undefined') {
       return { left: `${x + 12}px`, top: `${y + 12}px` }
@@ -53,7 +53,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
 
     const lc = await import('lightweight-charts')
     const container = chartContainerRef.current
-    const chartWidth = container.clientWidth || 318
+    const chartWidth = container.clientWidth || 438
 
     const chart = lc.createChart(container, {
       width: chartWidth,
@@ -67,7 +67,14 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
         horzLines: { color: 'rgba(255,255,255,0.05)' },
       },
       crosshair: { mode: 0 },
-      timeScale: { borderColor: 'rgba(255,255,255,0.1)' },
+      timeScale: {
+        borderColor: 'rgba(255,255,255,0.1)',
+        barSpacing: 5,
+        tickMarkFormatter: (time: number) => {
+          const d = new Date(time * 1000)
+          return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
+        },
+      },
       rightPriceScale: { borderColor: 'rgba(255,255,255,0.1)' },
     })
 
@@ -178,7 +185,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
         display: visible && stock ? 'block' : 'none',
         position: 'fixed',
         zIndex: 1500,
-        width: '320px',
+        width: '440px',
         background: '#1e1e2e',
         border: '1px solid rgba(255,255,255,0.1)',
         borderRadius: '6px',
