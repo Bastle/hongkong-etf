@@ -9,6 +9,10 @@ node_modules/
 dist/
 .data/
 
+# --- Next.js 构建产物 ---
+.next/
+next-env.d.ts
+
 # --- 环境变量（含敏感信息，禁止提交）---
 .env
 .env.*

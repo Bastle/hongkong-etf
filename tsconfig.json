@@ -1,25 +1,42 @@
 {
-  "extends": "./.nuxt/tsconfig.json",
   "compilerOptions": {
-    "lib": ["ES2020", "DOM", "DOM.Iterable"],
-    "target": "ES2020",
-    "module": "ESNext",
-    "moduleResolution": "Bundler",
+    "target": "ES2017",
+    "lib": [
+      "dom",
+      "dom.iterable",
+      "esnext"
+    ],
+    "allowJs": true,
     "skipLibCheck": true,
-    "strict": false,
+    "strict": true,
     "noEmit": true,
+    "esModuleInterop": true,
+    "module": "esnext",
+    "moduleResolution": "bundler",
     "resolveJsonModule": true,
     "isolatedModules": true,
-    "esModuleInterop": true,
     "jsx": "preserve",
+    "incremental": true,
     "paths": {
-      "~/*": ["./app/*"],
-      "#imports": ["./.nuxt/imports.d.ts"]
-    }
+      "@/*": [
+        "./*"
+      ]
+    },
+    "plugins": [
+      {
+        "name": "next"
+      }
+    ]
   },
   "include": [
-    "app/**/*.ts",
-    "app/**/*.vue",
-    "server/**/*.ts"
+    "next-env.d.ts",
+    "**/*.ts",
+    "**/*.tsx",
+    ".next/types/**/*.ts"
+  ],
+  "exclude": [
+    "node_modules",
+    "app",
+    "server"
   ]
 }

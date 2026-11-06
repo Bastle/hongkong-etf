@@ -68,6 +68,7 @@ status:
 clean:
 	@echo "→ 清理临时文件..."
 	@find . -name "*.tmp" -o -name "*.log" -o -name "*.bak" | xargs rm -f 2>/dev/null || true
+	@rm -rf .next
 	@echo "✓ 清理完成"
 
 # 帮助信息
