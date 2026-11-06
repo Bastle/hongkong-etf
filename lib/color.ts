@@ -15,18 +15,17 @@ const PALETTE = [
 
 /**
  * 将涨跌幅(%)映射为热力图颜色
- * sigmoid: normalized = 2 / (1 + e^(-change/8)) - 1
- * 输出 [-1, 1] 映射到色板索引 [0, 8]，线性插值
+ * 固定红/绿基色 + 半透明度区分幅度：
+ *   涨(红) 跌(绿) 颜色不变，α = 0.12 + 0.88 × |sigmoid(normalized)|
+ *   小涨/小跌 → 几乎透明；大涨/大跌 → 接近不透明
  */
 export function getHeatColor(changePercent: number): string {
-  const normalized = 2 / (1 + Math.exp(-changePercent / 8)) - 1
-  // normalized [-1, 1] → index [0, 8]
-  const rawIndex = (normalized + 1) / 2 * 8
-  const idx = Math.min(7, Math.max(0, Math.floor(rawIndex)))
-  const t = rawIndex - idx
+  const normalized = 2 / (1 + Math.exp(-changePercent / 8)) - 1  // [-1, 1]
+  const alpha = Math.round((0.12 + 0.88 * Math.abs(normalized)) * 100) / 100
 
-  if (t <= 0) return PALETTE[idx]
-  return lerpColor(PALETTE[idx], PALETTE[idx + 1], t)
+  if (Math.abs(normalized) < 0.02) return `rgba(140, 140, 140, 0.15)` // 平盘
+  if (normalized > 0) return `rgba(229, 57, 53, ${alpha})`   // 红 = 涨
+  return `rgba(76, 175, 80, ${alpha})`                        // 绿 = 跌
 }
 
 /**

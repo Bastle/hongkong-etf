@@ -1,97 +1,80 @@
 import { describe, it, expect } from 'vitest'
 import { getHeatColor, lerpColor } from '../lib/color'
 
+// 解析 rgba(r, g, b, a) 字符串
+function parseRGBA(color: string): { r: number; g: number; b: number; a: number } {
+  const m = color.match(/rgba?\((\d+),\s*(\d+),\s*(\d+),\s*([\d.]+)\)/)
+  if (!m) throw new Error(`Not an rgba string: ${color}`)
+  return { r: +m[1], g: +m[2], b: +m[3], a: +m[4] }
+}
+
 describe('getHeatColor', () => {
-  it('极端大涨 (>20%) 返回暗红色系', () => {
-    const color = getHeatColor(30)
-    expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
-    const r = parseInt(color.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
-    const b = parseInt(color.slice(5, 7), 16)
-    // 红色占主导
+  it('极端大涨 (>20%) 返回高透明度红色', () => {
+    const { r, g, b, a } = parseRGBA(getHeatColor(30))
     expect(r).toBeGreaterThan(g)
     expect(r).toBeGreaterThan(b)
+    expect(a).toBeGreaterThan(0.7)
   })
 
-  it('大涨 (10~20%) 返回红色系', () => {
-    const color = getHeatColor(15)
-    expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
-    const r = parseInt(color.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
+  it('大涨 (10~20%) 返回红色', () => {
+    const { r, g, a } = parseRGBA(getHeatColor(15))
     expect(r).toBeGreaterThan(g)
+    expect(a).toBeGreaterThan(0.5)
   })
 
-  it('小涨 (0~5%) 返回偏红色', () => {
-    const color = getHeatColor(3)
-    expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
-    // 应该比 flat 更红
-    const flatColor = getHeatColor(0)
-    const flatR = parseInt(flatColor.slice(1, 3), 16)
-    const r = parseInt(color.slice(1, 3), 16)
-    expect(r).toBeGreaterThan(flatR)
+  it('小涨 (0~5%) 返回低透明度红色', () => {
+    const { r, g, a } = parseRGBA(getHeatColor(3))
+    expect(r).toBeGreaterThan(g)
+    expect(a).toBeLessThan(0.5)
   })
 
-  it('平盘 (0%) 返回 flat 色', () => {
-    expect(getHeatColor(0)).toBe('#8c8c8c')
+  it('平盘 (0%) 返回低透明度灰色', () => {
+    const { r, g, b, a } = parseRGBA(getHeatColor(0))
+    expect(r).toBe(g)
+    expect(g).toBe(b)
+    expect(a).toBeLessThan(0.2)
   })
 
-  it('小跌 (-5~0%) 返回偏绿色', () => {
-    const color = getHeatColor(-3)
-    expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
-    const flatColor = getHeatColor(0)
-    const flatG = parseInt(flatColor.slice(3, 5), 16)
-    const flatR = parseInt(flatColor.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
-    const r = parseInt(color.slice(1, 3), 16)
-    // 更绿 + 更不红
-    expect(g).toBeGreaterThan(flatG)
-    expect(r).toBeLessThan(flatR)
-  })
-
-  it('大跌 (-20~-10%) 返回绿色系', () => {
-    const color = getHeatColor(-15)
-    expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
-    const r = parseInt(color.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
-    // 绿色占主导
+  it('小跌 (-5~0%) 返回低透明度绿色', () => {
+    const { r, g, a } = parseRGBA(getHeatColor(-3))
     expect(g).toBeGreaterThan(r)
+    expect(a).toBeLessThan(0.5)
   })
 
-  it('极端大跌 (<-20%) 返回深绿色系', () => {
-    const color = getHeatColor(-30)
-    expect(color).toMatch(/^#[0-9A-Fa-f]{6}$/)
-    const r = parseInt(color.slice(1, 3), 16)
-    const g = parseInt(color.slice(3, 5), 16)
-    // 绿色占主导（深绿 #1b5e20 的 g 低于浅绿但仍是主色）
+  it('大跌 (-20~-10%) 返回高透明度绿色', () => {
+    const { r, g, a } = parseRGBA(getHeatColor(-15))
     expect(g).toBeGreaterThan(r)
+    expect(a).toBeGreaterThan(0.5)
   })
 
-  it('涨跌幅符号正确：正值红，负值绿（A 股风格）', () => {
-    const up = getHeatColor(5)
-    const down = getHeatColor(-5)
-    const upR = parseInt(up.slice(1, 3), 16)
-    const downR = parseInt(down.slice(1, 3), 16)
-    expect(upR).toBeGreaterThan(downR)
+  it('极端大跌 (<-20%) 返回高透明度绿色', () => {
+    const { r, g, a } = parseRGBA(getHeatColor(-30))
+    expect(g).toBeGreaterThan(r)
+    expect(a).toBeGreaterThan(0.7)
   })
 
-  it('渐变生效：小跌与大跌色值不同', () => {
-    const mildDown = getHeatColor(-2)
-    const highDown = getHeatColor(-15)
-    expect(mildDown).not.toBe(highDown)
+  it('涨跌幅符号正确：正值红，负值绿', () => {
+    const up = parseRGBA(getHeatColor(5))
+    const down = parseRGBA(getHeatColor(-5))
+    expect(up.r).toBeGreaterThan(up.g)    // 涨 = 红
+    expect(down.g).toBeGreaterThan(down.r) // 跌 = 绿
   })
 
-  it('渐变生效：小涨与大涨色值不同', () => {
-    const mildUp = getHeatColor(2)
-    const highUp = getHeatColor(15)
-    expect(mildUp).not.toBe(highUp)
+  it('透明度随幅度单调递增', () => {
+    const mild = parseRGBA(getHeatColor(2))
+    const mid = parseRGBA(getHeatColor(8))
+    const high = parseRGBA(getHeatColor(20))
+    expect(mid.a).toBeGreaterThan(mild.a)
+    expect(high.a).toBeGreaterThan(mid.a)
   })
 
-  it('中间调可辨：小涨/小跌与平盘不同', () => {
+  it('小幅涨跌与平盘颜色不同', () => {
     const flat = getHeatColor(0)
-    const mildUp = getHeatColor(1)
-    const mildDown = getHeatColor(-1)
-    expect(mildUp).not.toBe(flat)
-    expect(mildDown).not.toBe(flat)
+    const mildUp = parseRGBA(getHeatColor(1))
+    const mildDown = parseRGBA(getHeatColor(-1))
+    // 不同方向
+    expect(mildUp.r).toBeGreaterThan(mildUp.g)
+    expect(mildDown.g).toBeGreaterThan(mildDown.r)
   })
 })
 

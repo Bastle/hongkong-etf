@@ -94,8 +94,8 @@ export function drawTreemap(
       // 面积 >= 60×30 时额外绘制涨跌幅
       if (h >= 30 && w >= 60) {
         const changeText = leaf.data.changePercent >= 0
-          ? `+${leaf.data.changePercent.toFixed(1)}%`
-          : `${leaf.data.changePercent.toFixed(1)}%`
+          ? `+${leaf.data.changePercent.toFixed(2)}%`
+          : `${leaf.data.changePercent.toFixed(2)}%`
         ctx.font = `${fontSize * 0.85}px -apple-system, sans-serif`
         ctx.fillText(changeText, centerX, centerY + fontSize * 0.6)
       }
@@ -139,8 +139,8 @@ export function drawSectorLabels(
     // 涨跌幅均值（右侧）
     if (w >= 80) {
       const changeText = sector.avgChange >= 0
-        ? `+${sector.avgChange.toFixed(1)}%`
-        : `${sector.avgChange.toFixed(1)}%`
+        ? `+${sector.avgChange.toFixed(2)}%`
+        : `${sector.avgChange.toFixed(2)}%`
       ctx.fillStyle = sector.avgChange >= 0
         ? 'rgba(255, 138, 128, 0.7)'
         : 'rgba(105, 240, 174, 0.7)'
