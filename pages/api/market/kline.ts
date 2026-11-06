@@ -26,20 +26,22 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const symbol = `hk${code.padStart(5, '0')}`
-  const url = `http://web.ifzq.gtimg.cn/appstock/app/fqkline/get?param=${symbol},day,,,240,qfq`
+  // proxy.finance.qq.com 是 web.ifzq.gtimg.cn 的反代，不会被 WAF 拦截
+  const url = `https://proxy.finance.qq.com/ifzqgtimg/appstock/app/fqkline/get?param=${symbol},day,,,240,qfq`
 
   try {
     const response = await fetch(url)
     const json = await response.json()
 
+    // 腾讯 K 线数据列顺序: [date, open, close, high, low, volume]
     const dayData = json?.data?.[symbol]?.day ?? json?.data?.[symbol]?.qfqday ?? []
 
     const data: KlineItem[] = dayData.map((item: any[]) => ({
       date: item[0],
       open: parseFloat(item[1]) || 0,
-      high: parseFloat(item[2]) || 0,
-      low: parseFloat(item[3]) || 0,
-      close: parseFloat(item[4]) || 0,
+      close: parseFloat(item[2]) || 0,
+      high: parseFloat(item[3]) || 0,
+      low: parseFloat(item[4]) || 0,
       volume: parseFloat(item[5]) || 0,
     })).filter((item: KlineItem) => item.open > 0 && item.close > 0)
 
