@@ -4,6 +4,7 @@ import type { HKStockQuote } from '@/types/market'
 import { computeTooltipPosition } from '@/lib/tooltip-position'
 import type { KlineItem } from '@/hooks/useKlinePrefetch'
 import IntradaySparkline from './IntradaySparkline'
+import { useMarket } from '@/contexts/MarketContext'
 
 interface KlinePopupProps {
   stock: HKStockQuote | null
@@ -32,7 +33,10 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
   const chartRef = useRef<any>(null)
   const candleSeriesRef = useRef<any>(null)
   const volumeSeriesRef = useRef<any>(null)
+  const { state } = useMarket()
+  const colorMode = state.klineColorMode
   const [loading, setLoading] = useState(false)
+  const klineDataRef = useRef<KlineItem[] | null>(null)
 
   // 浮动面板定位
   const floatStyle = useMemo(() => {
@@ -113,6 +117,43 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
     })
   }, [])
 
+  // 根据颜色模式着色并设置数据
+  const applyData = useCallback((data: KlineItem[], mode: 'open' | 'prevClose') => {
+    if (!candleSeriesRef.current || !data || data.length === 0) return
+
+    const UP = '#f63538'
+    const DOWN = '#30cc5a'
+
+    candleSeriesRef.current.setData(data.map((item: KlineItem, i: number) => {
+      const ref = mode === 'open' ? item.open : (i > 0 ? data[i - 1].close : item.open)
+      const isUp = item.close >= ref
+      return {
+        time: item.date,
+        open: item.open,
+        high: item.high,
+        low: item.low,
+        close: item.close,
+        color: isUp ? UP : DOWN,
+        borderColor: isUp ? UP : DOWN,
+        wickColor: isUp ? UP : DOWN,
+      }
+    }))
+
+    if (volumeSeriesRef.current) {
+      volumeSeriesRef.current.setData(data.map((item: KlineItem, i: number) => {
+        const ref = mode === 'open' ? item.open : (i > 0 ? data[i - 1].close : item.open)
+        const isUp = item.close >= ref
+        return {
+          time: item.date,
+          value: item.volume,
+          color: isUp ? 'rgba(246, 53, 56, 0.35)' : 'rgba(0, 230, 118, 0.35)',
+        }
+      }))
+    }
+
+    chartRef.current?.timeScale().fitContent()
+  }, [])
+
   // 获取数据
   const fetchData = useCallback(async () => {
     const code = stock?.code
@@ -125,31 +166,23 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
         const json = await res.json()
         data = json.data
       }
-      if (candleSeriesRef.current && data && data.length > 0) {
-        candleSeriesRef.current.setData(data.map((item: KlineItem) => ({
-          time: item.date,
-          open: item.open,
-          high: item.high,
-          low: item.low,
-          close: item.close,
-        })))
-        if (volumeSeriesRef.current) {
-          volumeSeriesRef.current.setData(data.map((item: KlineItem) => ({
-            time: item.date,
-            value: item.volume,
-            color: item.close >= item.open
-              ? 'rgba(246, 53, 56, 0.35)'
-              : 'rgba(0, 230, 118, 0.35)',
-          })))
-        }
-        chartRef.current?.timeScale().fitContent()
+      if (data && data.length > 0) {
+        klineDataRef.current = data
+        applyData(data, colorMode)
       }
     } catch (e) {
       console.error('Failed to fetch kline:', e)
     } finally {
       setLoading(false)
     }
-  }, [stock?.code, cachedData])
+  }, [stock?.code, cachedData, colorMode, applyData])
+
+  // 颜色模式切换时重新着色（不重新请求）
+  useEffect(() => {
+    if (klineDataRef.current && klineDataRef.current.length > 0) {
+      applyData(klineDataRef.current, colorMode)
+    }
+  }, [colorMode, applyData])
 
   // visible 或 stock 变化时初始化 + 获取数据
   useEffect(() => {

@@ -18,6 +18,9 @@ interface MarketState {
   ahEnabled: boolean
   ahPairs: AHPremiumPair[]
   ahPremiumMap: Map<string, number>
+
+  // K 线颜色模式
+  klineColorMode: 'open' | 'prevClose'
 }
 
 const initialState: MarketState = {
@@ -29,6 +32,7 @@ const initialState: MarketState = {
   ahEnabled: false,
   ahPairs: [],
   ahPremiumMap: new Map(),
+  klineColorMode: 'open',
 }
 
 // --- Actions ---
@@ -40,6 +44,7 @@ type MarketAction =
   | { type: 'SET_SOUTHBOUND'; payload: { aggregate: SouthboundAggregate | null; flows: Map<string, SouthboundFlow> } }
   | { type: 'TOGGLE_AH' }
   | { type: 'SET_AH'; payload: { pairs: AHPremiumPair[]; premiumMap: Map<string, number> } }
+  | { type: 'SET_KLINE_COLOR_MODE'; payload: 'open' | 'prevClose' }
 
 function marketReducer(state: MarketState, action: MarketAction): MarketState {
   switch (action.type) {
@@ -63,6 +68,8 @@ function marketReducer(state: MarketState, action: MarketAction): MarketState {
         ahPairs: action.payload.pairs,
         ahPremiumMap: action.payload.premiumMap,
       }
+    case 'SET_KLINE_COLOR_MODE':
+      return { ...state, klineColorMode: action.payload }
   }
 }
 

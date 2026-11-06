@@ -53,9 +53,11 @@ function HomeContent() {
           stockConnect={state.stockConnectEnabled}
           southbound={state.southboundEnabled}
           ahPremium={state.ahEnabled}
+          klineColorMode={state.klineColorMode}
           onToggleStockConnect={() => dispatch({ type: 'TOGGLE_STOCK_CONNECT' })}
           onToggleSouthbound={() => dispatch({ type: 'TOGGLE_SOUTHBOUND' })}
           onToggleAHPremium={() => dispatch({ type: 'TOGGLE_AH' })}
+          onSetColorMode={(mode) => dispatch({ type: 'SET_KLINE_COLOR_MODE', payload: mode })}
         />
       </div>
 
