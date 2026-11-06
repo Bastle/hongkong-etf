@@ -61,6 +61,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
       layout: {
         background: { color: '#1e1e2e' },
         textColor: '#999',
+        attributionLogo: false,
       },
       grid: {
         vertLines: { color: 'rgba(255,255,255,0.05)' },
@@ -70,8 +71,11 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
       timeScale: {
         borderColor: 'rgba(255,255,255,0.1)',
         barSpacing: 5,
-        tickMarkFormatter: (time: number) => {
-          const d = new Date(time * 1000)
+        tickMarkFormatter: (time: any) => {
+          const d = typeof time === 'number'
+            ? new Date(time * 1000)
+            : new Date(time as string)
+          if (isNaN(d.getTime())) return ''
           return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         },
       },
