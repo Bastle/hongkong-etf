@@ -1,6 +1,6 @@
 # 港股热力图 · HK Stock Heatmap
 
-> 全屏 treemap 可视化，一屏纵览 ~2600 只港股的市值与实时涨跌。
+> 全屏 treemap 可视化，一屏纵览港股的市值与实时涨跌。
 
 - **区块面积** = 市值
 - **区块颜色** = 涨跌幅（红涨 / 绿跌）
@@ -12,13 +12,14 @@
 
 ## 功能特性
 
-- **Treemap 全屏布局** — D3-hierarchy 计算、Canvas 2D 渲染，支持 ~2600 个区块
-- **渐进式加载** — 首屏 Top 200 股票 < 1.5s，剩余后台补全
+- **Treemap 全屏布局** — D3-hierarchy 计算、Canvas 2D 渲染
+- **渐进式加载** — 首屏 Top 200 股票 < 1.5s，剩余后台补全；移动端 Top 100
 - **双 Canvas 架构** — 主 Canvas 绘制数据，Hover Canvas 处理交互，互不阻塞
-- **K 线弹窗** — 点击任意股票查看 lightweight-charts K 线
+- **K 线弹窗** — hover 查看 lightweight-charts 蜡烛图 + 成交量副图
+- **K 线持久化** — 本地 JSON 存储 240 行日 K，配合实时行情自动拼接今日蜡烛
 - **多维筛选** — 互联互通、南向资金覆盖、AH 溢价视图
 - **自动刷新** — 8 秒间隔 + 随机 jitter 避免惊群
-- **响应式适配** — 桌面 / 平板 / 移动端（移动端 Top 100）
+- **响应式适配** — 桌面 / 平板 / 移动端
 
 ---
 
@@ -26,12 +27,12 @@
 
 | 层 | 选型 |
 |---|---|
-| 框架 | [Nuxt 3](https://nuxt.com) (Vue 3 + Vite, SSR) |
-| UI | [Arco Design](https://arco.design) + [UnoCSS](https://unocss.dev) |
+| 框架 | [Next.js 14](https://nextjs.org) (React 18, Pages Router) |
+| UI | [Tailwind CSS](https://tailwindcss.com) |
 | 可视化 | [D3.js](https://d3js.org) d3-hierarchy + Canvas 2D |
-| K 线 | [lightweight-charts](https://www.tradingview.com/lightweight-charts/) |
-| 状态 | [Pinia](https://pinia.vuejs.org) |
-| 测试 | [Vitest](https://vitest.dev) (unit) + [Playwright](https://playwright.dev) (E2E) |
+| K 线 | [lightweight-charts](https://www.tradingview.com/lightweight-charts/) v5 |
+| 状态 | React Context + useReducer |
+| 测试 | [Vitest](https://vitest.dev) |
 | 部署 | [Vercel](https://vercel.com) |
 
 ---
@@ -49,49 +50,60 @@
 yarn install
 ```
 
+### 同步 K 线数据（首次使用）
+
+```bash
+make sync-kline   # 全量拉取 89 只股票 240 行日 K，约 5 分钟
+```
+
 ### 启动开发
 
 ```bash
-make dev        # 等价于 yarn dev，默认 http://localhost:3000
+make dev          # 等价于 yarn dev，默认 http://localhost:3000
 ```
 
-### 生产构建
+### 构建与测试
 
 ```bash
-make build      # 等价于 yarn build
+make build        # 生产构建
+make test         # 单元测试 (Vitest, 52 tests)
+make lint         # 代码风格 (ESLint)
+make check        # lint + test 完整验证
 ```
 
-### 运行测试
-
-```bash
-make test       # 单元测试 (Vitest)
-make lint       # 代码风格 (ESLint)
-make check      # lint + test 完整验证
-```
-
-更多命令见 [Makefile](Makefile)，或直接 `make help`。
+更多命令见 `make help`。
 
 ---
 
 ## 目录结构
 
 ```
-app/
-  components/TreeMap/     # MainCanvas / HoverCanvas / Tooltip / index
-  components/KlineChart/  # KlinePopup
-  composables/            # useTreeMapLayout / useCanvasRender / useMarketData 等
-  utils/                  # color / normalization / format
-  types/                  # market 类型定义
-server/
-  api/market/             # Nuxt Nitro 服务端路由
-  utils/                  # tencent / sina / cache / rate-limiter
-  data/                   # hk-stock-list.json / hsci-sectors.ts
-docs/
-  DECISIONS.md            # 架构决策日志
+components/
+  TreeMap/            # MainCanvas / HoverCanvas / index
+  KlinePopup.tsx      # K 线弹窗（lightweight-charts）
+  IndexHeader.tsx     # 大盘指数头部
+  MarketSwitcher.tsx  # 市场切换器
+  FilterBar.tsx       # 筛选栏
+contexts/
+  MarketContext.tsx   # 全局状态（筛选/南向/AH 溢价）
 hooks/
-  pre-commit              # Git 提交前验证
-templates/
-  NEW_FEATURE.md          # 新功能开工模板
+  useKlinePrefetch.ts # K 线预取 + 模块级缓存
+  useAutoRefresh.ts   # 自动刷新
+  useElementSize.ts   # ResizeObserver 尺寸监听
+lib/
+  treemap-layout.ts   # D3 treemap 布局计算
+  canvas-render.ts    # Canvas 绘制函数
+  color.ts            # Sigmoid 颜色映射
+  tooltip-position.ts # Tooltip 视口钳制
+  server/             # cache / rate-limiter / tencent / sina / stock-list
+pages/
+  index.tsx           # 主页面
+  api/market/         # API 路由（kline / sectors / stocks / southbound 等）
+data/
+  kline/              # K 线本地存储（gitignore，make sync-kline 生成）
+  hsci-sectors.ts     # HSCI 行业分类
+scripts/
+  sync-kline.ts       # K 线全量同步脚本
 ```
 
 ---
@@ -100,17 +112,25 @@ templates/
 
 | 数据源 | 用途 | 状态 |
 |---|---|---|
-| 腾讯 API `qt.gtimg.cn/q=hk{code}` | 实时行情（主） | ✅ |
-| 新浪 API `hq.sinajs.cn/list=rt_hk{code}` | 实时行情（备） | ✅ |
-| akshare (Python) | 股票列表 / 行业 | ⚠️ 东方财富 API 不可用 |
-| HSCI 分类 | 行业归属（静态数据，每日刷新） | ✅ |
+| 腾讯 `qt.gtimg.cn` | 实时行情（主） | ✅ |
+| 腾讯 `ifzq.gtimg.cn` / `web.ifzq.gtimg.cn` | 日 K 线（多端点容错） | ✅ |
+| 新浪 `hq.sinajs.cn` | 实时行情（备） | ✅ |
+| HSCI 分类 | 行业归属（静态数据） | ✅ |
 
 **数据流**：
+
 ```
-Browser → /api/market/* (Nuxt Nitro)
-       → Rate Limiter + Cache (8s TTL)
-       → Tencent / Sina / akshare / HSCI
+Browser → /api/market/* (Next.js API Routes)
+       → 内存缓存 (60s TTL) → 本地 JSON 文件 → 外部 API（多端点容错）
+       → 行情 API 补全今日实时 K 线
 ```
+
+**K 线数据三级读取**：
+
+1. **内存缓存** — 60s TTL，命中直接返回
+2. **本地 JSON** — `data/kline/{code}.json`，由 `make sync-kline` 生成
+3. **外部 API** — `ifzq.gtimg.cn` + `web.ifzq.gtimg.cn` 双端点容错，成功后写回本地
+4. **今日实时** — 从 `qt.gtimg.cn` 行情构造当日 OHLCV 追加到末尾
 
 所有外部 API 响应必须通过 `normalizeTencentData()` / `normalizeSinaData()` 规范化，并用 `safeFloat()` / `safeInt()` 兜底 NaN，防止 D3 布局崩溃。
 
@@ -120,14 +140,14 @@ Browser → /api/market/* (Nuxt Nitro)
 
 ### 颜色映射（Sigmoid 非线性）
 
-处理 30%+ 的极端涨跌，避免线性映射饱和：
+处理 30%+ 的极端涨跌，9 级渐变色板：
 
 ```
-normalized = 2 / (1 + e^(-change/10)) - 1
+normalized = 2 / (1 + e^(-change/8)) - 1
 ```
 
-- 红 `#B71C1C → #FF8A80` 涨
-- 灰 `#263238` 平
+- 红 `#FF8A80 → #B71C1C` 涨
+- 灰 `#8C8C8C` 平
 - 绿 `#69F0AE → #1B5E20` 跌
 
 ### 服务端限流
@@ -147,7 +167,7 @@ normalized = 2 / (1 + e^(-change/10)) - 1
 
 1. 所有 API 响应必须通过 `normalizeTencentData()` / `normalizeSinaData()` 规范化
 2. Market cap = 0 或 NaN 必须降级为 `1e8`，保持区块可见
-3. 不要修改 `server/utils/cache.ts` 的 TTL 配置（当前 8s）
+3. 不要修改 `lib/server/cache.ts` 的交易时段 TTL 配置（当前 5s）
 4. Canvas 渲染必须保持双层架构（Main + Hover）
 5. 敏感信息（API key、密码）绝不提交到 git
 
@@ -158,16 +178,15 @@ normalized = 2 / (1 + e^(-change/10)) - 1
 | 指标 | 目标 |
 |---|---|
 | 首屏渲染 | ≤ 1.5s |
-| 数据获取 | ≤ 90s |
+| 交互响应 | ≤ 100ms |
 | 刷新耗时 | ≤ 200ms |
 | 内存占用 | ≤ 150MB |
-| 交互响应 | ≤ 100ms |
 
 ---
 
 ## 项目进度
 
-当前 **23/28 步完成 (82%)**，详见 [PROGRESS.md](PROGRESS.md) 与 [feature_list.json](feature_list.json)。
+详见 [PROGRESS.md](PROGRESS.md) 与 [feature_list.json](feature_list.json)。
 
 | Phase | 名称 | 状态 |
 |---|---|---|
@@ -175,9 +194,11 @@ normalized = 2 / (1 + e^(-change/10)) - 1
 | 1 | 数据层 | ✅ |
 | 2 | 布局层 | ✅ |
 | 3 | 渲染层 | ✅ |
-| 4 | 交互层 | ⏳ 60% |
+| 4 | 交互层 | ⏳ 80% |
 | 5 | P1 功能 | ✅ |
 | 6 | 部署上线 | ⬜ 待开始 |
+| 7 | 视觉优化专项 | ✅ |
+| 8 | React 重构 (Next.js) | ✅ |
 
 ---
 
