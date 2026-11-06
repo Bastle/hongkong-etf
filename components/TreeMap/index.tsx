@@ -52,12 +52,12 @@ export default function TreeMap({ sectors, marketFilter, southboundMap, ahColorM
     return getTopStocks(allStocks, limit)
   }, [allStocks])
 
-  // 批量预取 K 线
-  useEffect(() => {
-    if (displayStocks.length > 0) {
-      prefetch(displayStocks.map(s => s.code))
-    }
-  }, [displayStocks, prefetch])
+  // 批量预取 K 线 — 暂时禁用，改为 hover 时按需获取（降低 WAF 限流风险）
+  // useEffect(() => {
+  //   if (displayStocks.length > 0) {
+  //     prefetch(displayStocks.map(s => s.code))
+  //   }
+  // }, [displayStocks, prefetch])
 
   // 布局计算
   const layout = useMemo(() => {
