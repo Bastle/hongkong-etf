@@ -70,7 +70,7 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   const cacheKey = `kline:${code}`
   const cached = getCache<KlineItem[]>(cacheKey)
   if (cached) {
-    return res.json({ data: cached })
+    return res.json({ data: cached.slice(-120) })
   }
 
   let history: KlineItem[] | null = null
@@ -125,9 +125,10 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
       history = [...history, today]
     }
 
-    setCache(cacheKey, history, { ttl: 60 * 1000 })
     // 返回近半年数据（约 120 个交易日），本地缓存保留全量 240 行
-    return res.json({ data: history.slice(-120) })
+    const result = history.slice(-120)
+    setCache(cacheKey, result, { ttl: 60 * 1000 })
+    return res.json({ data: result })
   }
 
   res.json({ data: [] })
