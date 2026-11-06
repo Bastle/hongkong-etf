@@ -21,6 +21,16 @@ interface KlineFile {
 
 const KLINE_DIR = join(process.cwd(), 'data', 'kline')
 
+/** 港股今日是否已开盘（工作日 + HKT 09:30 后） */
+function hasMarketOpenedToday(): boolean {
+  const now = new Date()
+  const hkTime = new Date(now.getTime() + 8 * 60 * 60 * 1000)
+  const day = hkTime.getUTCDay()
+  const minutes = hkTime.getUTCHours() * 60 + hkTime.getUTCMinutes()
+  if (day === 0 || day === 6) return false
+  return minutes >= 540 // 09:00 HKT（含集合竞价）
+}
+
 /** 读取本地 JSON 文件中的历史 K 线 */
 function loadKlineFile(code: string): KlineItem[] | null {
   const filePath = join(KLINE_DIR, `${code}.json`)
@@ -118,11 +128,13 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
   }
 
-  // 4. 拼接今日实时 K 线（行情接口，不依赖 K 线 API）
+  // 4. 拼接今日实时 K 线（仅今日已开盘时，避免未开盘时行情接口返回昨日数据导致重复）
   if (history && history.length > 0) {
-    const today = await fetchTodayKline(code)
-    if (today && history[history.length - 1].date !== today.date) {
-      history = [...history, today]
+    if (hasMarketOpenedToday()) {
+      const today = await fetchTodayKline(code)
+      if (today && history[history.length - 1].date !== today.date) {
+        history = [...history, today]
+      }
     }
 
     // 返回近半年数据（约 120 个交易日），本地缓存保留全量 240 行
