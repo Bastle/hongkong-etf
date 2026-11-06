@@ -84,7 +84,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
           return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         },
       },
-      rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
+      rightPriceScale: { visible: false },
     })
 
     chartRef.current = chart
@@ -159,6 +159,12 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
     const code = stock?.code
     if (!code) return
     setLoading(true)
+
+    // 立即清除旧数据，避免切换股票时残留
+    if (candleSeriesRef.current) candleSeriesRef.current.setData([])
+    if (volumeSeriesRef.current) volumeSeriesRef.current.setData([])
+    klineDataRef.current = null
+
     try {
       let data = cachedData
       if (!data || data.length === 0) {
