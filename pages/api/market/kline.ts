@@ -1,13 +1,60 @@
 import type { NextApiRequest, NextApiResponse } from 'next'
+import { readFileSync, existsSync } from 'fs'
+import { join } from 'path'
 import { getCache, setCache } from '@/lib/server/cache'
+import { waitForToken } from '@/lib/server/rate-limiter'
+import { fetchStocksBatch } from '@/lib/server/tencent'
 
 interface KlineItem {
   date: string
   open: number
+  close: number
   high: number
   low: number
-  close: number
   volume: number
+}
+
+interface KlineFile {
+  updatedAt: number
+  data: KlineItem[]
+}
+
+const KLINE_DIR = join(process.cwd(), 'data', 'kline')
+
+/** 读取本地 JSON 文件中的历史 K 线 */
+function loadKlineFile(code: string): KlineItem[] | null {
+  const filePath = join(KLINE_DIR, `${code}.json`)
+  if (!existsSync(filePath)) return null
+  try {
+    const file: KlineFile = JSON.parse(readFileSync(filePath, 'utf-8'))
+    return file.data.length > 0 ? file.data : null
+  } catch {
+    return null
+  }
+}
+
+/** 从腾讯行情 API 获取今日 OHLCV，构造今日 K 线 */
+async function fetchTodayKline(code: string): Promise<KlineItem | null> {
+  try {
+    await waitForToken('tencent')
+    const stocks = await fetchStocksBatch([code])
+    const s = stocks[0]
+    if (!s || !s.open || !s.price) return null
+
+    const now = new Date()
+    const date = `${now.getFullYear()}-${String(now.getMonth() + 1).padStart(2, '0')}-${String(now.getDate()).padStart(2, '0')}`
+
+    return {
+      date,
+      open: s.open,
+      close: s.price,
+      high: s.high || s.price,
+      low: s.low || s.price,
+      volume: s.volume || 0,
+    }
+  } catch {
+    return null
+  }
 }
 
 export default async function handler(req: NextApiRequest, res: NextApiResponse) {
@@ -19,39 +66,68 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     return res.status(400).json({ error: 'Missing required parameter: code' })
   }
 
+  // 1. 内存缓存（60s TTL）
   const cacheKey = `kline:${code}`
   const cached = getCache<KlineItem[]>(cacheKey)
   if (cached) {
     return res.json({ data: cached })
   }
 
-  const symbol = `hk${code.padStart(5, '0')}`
-  // ifzq.gtimg.cn 不带 web. 前缀，不被 WAF 拦截（web. 和 proxy. 均已封禁）
-  const url = `https://ifzq.gtimg.cn/appstock/app/fqkline/get?param=${symbol},day,,,240,qfq`
+  let history: KlineItem[] | null = null
 
-  try {
-    const response = await fetch(url)
-    const json = await response.json()
+  // 2. 本地文件（数据持久化层）
+  history = loadKlineFile(code)
 
-    // 腾讯 K 线数据列顺序: [date, open, close, high, low, volume]
-    const dayData = json?.data?.[symbol]?.day ?? json?.data?.[symbol]?.qfqday ?? []
+  // 3. 外部 API 兜底（仅本地文件缺失时，多端点容错）
+  if (!history) {
+    const symbol = `hk${code.padStart(5, '0')}`
+    const klineHosts = ['ifzq.gtimg.cn', 'web.ifzq.gtimg.cn']
 
-    const data: KlineItem[] = dayData.map((item: any[]) => ({
-      date: item[0],
-      open: parseFloat(item[1]) || 0,
-      close: parseFloat(item[2]) || 0,
-      high: parseFloat(item[3]) || 0,
-      low: parseFloat(item[4]) || 0,
-      volume: parseFloat(item[5]) || 0,
-    })).filter((item: KlineItem) => item.open > 0 && item.close > 0)
+    for (const host of klineHosts) {
+      try {
+        await waitForToken('tencent')
+        const url = `https://${host}/appstock/app/fqkline/get?param=${symbol},day,,,240,qfq`
+        const response = await fetch(url)
+        if (!response.ok) throw new Error(`HTTP ${response.status}`)
+        const json = await response.json()
 
-    if (data.length > 0) {
-      setCache(cacheKey, data, { ttl: 60 * 1000 })
+        // 腾讯 K 线数据列顺序: [date, open, close, high, low, volume]
+        const dayData = json?.data?.[symbol]?.day ?? json?.data?.[symbol]?.qfqday ?? []
+
+        history = dayData.map((item: any[]): KlineItem => ({
+          date: item[0],
+          open: parseFloat(item[1]) || 0,
+          close: parseFloat(item[2]) || 0,
+          high: parseFloat(item[3]) || 0,
+          low: parseFloat(item[4]) || 0,
+          volume: parseFloat(item[5]) || 0,
+        })).filter((item: KlineItem) => item.open > 0 && item.close > 0)
+
+        if (history && history.length > 0) {
+          // 写回本地文件（供下次使用）
+          try {
+            const { writeFileSync, mkdirSync } = require('fs')
+            if (!existsSync(KLINE_DIR)) mkdirSync(KLINE_DIR, { recursive: true })
+            writeFileSync(join(KLINE_DIR, `${code}.json`), JSON.stringify({ updatedAt: Date.now(), data: history }))
+          } catch {}
+          break // 成功则不再尝试下一个端点
+        }
+      } catch (e) {
+        console.error(`Failed to fetch kline from ${host}:`, e)
+      }
+    }
+  }
+
+  // 4. 拼接今日实时 K 线（行情接口，不依赖 K 线 API）
+  if (history && history.length > 0) {
+    const today = await fetchTodayKline(code)
+    if (today && history[history.length - 1].date !== today.date) {
+      history = [...history, today]
     }
 
-    res.json({ data })
-  } catch (e) {
-    console.error('Failed to fetch kline data:', e)
-    res.json({ data: [] })
+    setCache(cacheKey, history, { ttl: 60 * 1000 })
+    return res.json({ data: history })
   }
+
+  res.json({ data: [] })
 }

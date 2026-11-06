@@ -9,7 +9,7 @@
 #   make status   查看项目状态
 #   make clean    清理临时文件
 
-.PHONY: dev test lint check build status clean help
+.PHONY: dev test lint check build status clean help sync-kline
 
 # 默认目标
 .DEFAULT_GOAL := help
@@ -64,6 +64,11 @@ status:
 		echo "  feature_list.json 不存在"; \
 	fi
 
+# 同步 K 线数据到本地
+sync-kline:
+	@echo "→ 同步 K 线数据..."
+	npx tsx scripts/sync-kline.ts
+
 # 清理临时文件
 clean:
 	@echo "→ 清理临时文件..."
@@ -81,5 +86,6 @@ help:
 	@echo "  make check    完整验证 (lint + test)"
 	@echo "  make build    生产构建"
 	@echo "  make status   查看项目状态"
+	@echo "  make sync-kline  同步 K 线数据到本地"
 	@echo "  make clean    清理临时文件"
 	@echo "  make help     显示此帮助"
