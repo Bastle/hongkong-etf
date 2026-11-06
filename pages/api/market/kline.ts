@@ -26,8 +26,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
   }
 
   const symbol = `hk${code.padStart(5, '0')}`
-  // proxy.finance.qq.com 是 web.ifzq.gtimg.cn 的反代，不会被 WAF 拦截
-  const url = `https://proxy.finance.qq.com/ifzqgtimg/appstock/app/fqkline/get?param=${symbol},day,,,240,qfq`
+  // ifzq.gtimg.cn 不带 web. 前缀，不被 WAF 拦截（web. 和 proxy. 均已封禁）
+  const url = `https://ifzq.gtimg.cn/appstock/app/fqkline/get?param=${symbol},day,,,240,qfq`
 
   try {
     const response = await fetch(url)
