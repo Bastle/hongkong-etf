@@ -126,7 +126,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
     }
 
     setCache(cacheKey, history, { ttl: 60 * 1000 })
-    return res.json({ data: history })
+    // 返回近半年数据（约 120 个交易日），本地缓存保留全量 240 行
+    return res.json({ data: history.slice(-120) })
   }
 
   res.json({ data: [] })

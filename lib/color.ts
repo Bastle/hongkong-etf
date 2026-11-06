@@ -24,8 +24,8 @@ export function getHeatColor(changePercent: number): string {
   const alpha = Math.round((0.12 + 0.88 * Math.abs(normalized)) * 100) / 100
 
   if (Math.abs(normalized) < 0.02) return `rgba(140, 140, 140, 0.15)` // 平盘
-  if (normalized > 0) return `rgba(229, 57, 53, ${alpha})`   // 红 = 涨
-  return `rgba(76, 175, 80, ${alpha})`                        // 绿 = 跌
+  if (normalized > 0) return `rgba(246, 53, 56, ${alpha})`   // 红 = 涨（与 K 线一致）
+  return `rgba(0, 230, 118, ${alpha})`                        // 绿 = 跌（高饱和）
 }
 
 /**

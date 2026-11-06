@@ -59,17 +59,17 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
       width: chartWidth,
       height: 280,
       layout: {
-        background: { color: '#1e1e2e' },
-        textColor: '#999',
+        background: { color: '#ffffff' },
+        textColor: '#666',
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: 'rgba(255,255,255,0.05)' },
-        horzLines: { color: 'rgba(255,255,255,0.05)' },
+        vertLines: { color: 'rgba(0,0,0,0.06)' },
+        horzLines: { color: 'rgba(0,0,0,0.06)' },
       },
       crosshair: { mode: 0 },
       timeScale: {
-        borderColor: 'rgba(255,255,255,0.1)',
+        borderColor: 'rgba(0,0,0,0.1)',
         barSpacing: 5,
         tickMarkFormatter: (time: any) => {
           const d = typeof time === 'number'
@@ -79,7 +79,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
           return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         },
       },
-      rightPriceScale: { borderColor: 'rgba(255,255,255,0.1)' },
+      rightPriceScale: { borderColor: 'rgba(0,0,0,0.1)' },
     })
 
     chartRef.current = chart
@@ -100,7 +100,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
       color: '#666',
     })
     chart.priceScale('').applyOptions({
-      scaleMargins: { top: 0.8, bottom: 0 },
+      scaleMargins: { top: 0.85, bottom: 0 },
     })
 
     // 浏览器 paint 后校正宽度
@@ -137,8 +137,8 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
             time: item.date,
             value: item.volume,
             color: item.close >= item.open
-              ? 'rgba(246, 53, 56, 0.5)'
-              : 'rgba(48, 204, 90, 0.5)',
+              ? 'rgba(246, 53, 56, 0.35)'
+              : 'rgba(0, 230, 118, 0.35)',
           })))
         }
         chartRef.current?.timeScale().fitContent()
@@ -190,39 +190,39 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
         position: 'fixed',
         zIndex: 1500,
         width: '440px',
-        background: '#1e1e2e',
-        border: '1px solid rgba(255,255,255,0.1)',
+        background: '#ffffff',
+        border: '1px solid rgba(0,0,0,0.1)',
         borderRadius: '6px',
-        boxShadow: '0 4px 20px rgba(0,0,0,0.5)',
+        boxShadow: '0 4px 20px rgba(0,0,0,0.15)',
         pointerEvents: 'none',
         overflow: 'hidden',
       }}
     >
       {/* Header */}
-      <div className="flex justify-between items-center px-2.5 py-1.5 border-b border-white/[0.08]">
-        <span className="text-[#ccc] text-xs font-medium">
+      <div className="flex justify-between items-center px-2.5 py-1.5 border-b border-black/[0.08]">
+        <span className="text-gray-700 text-xs font-medium">
           {stock?.name} {stock?.code}.HK
         </span>
         {loading && (
-          <span className="w-1.5 h-1.5 rounded-full bg-gray-500 animate-pulse"></span>
+          <span className="w-1.5 h-1.5 rounded-full bg-gray-400 animate-pulse"></span>
         )}
       </div>
 
       {/* Info */}
       {stock && (
-        <div className="px-2.5 pt-2 pb-1.5 border-b border-white/[0.08]">
+        <div className="px-2.5 pt-2 pb-1.5 border-b border-black/[0.08]">
           <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-lg font-semibold text-white">{stock.price.toFixed(2)}</span>
-            <span className={`text-[13px] font-medium ${stock.changePercent >= 0 ? 'text-[#FF5252]' : 'text-[#69F0AE]'}`}>
+            <span className="text-lg font-semibold text-gray-900">{stock.price.toFixed(2)}</span>
+            <span className={`text-[13px] font-medium ${stock.changePercent >= 0 ? 'text-[#f63538]' : 'text-[#00e676]'}`}>
               {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
             </span>
           </div>
-          <div className="flex gap-3 text-[11px] text-gray-400 leading-relaxed">
+          <div className="flex gap-3 text-[11px] text-gray-500 leading-relaxed">
             <span>市值 {formatMarketCap(stock.marketCap)}</span>
             <span>每手 {stock.lotSize}股</span>
           </div>
           {stock.amount > 0 && (
-            <div className="flex gap-3 text-[11px] text-gray-400 leading-relaxed">
+            <div className="flex gap-3 text-[11px] text-gray-500 leading-relaxed">
               <span>成交额 {formatAmount(stock.amount)}</span>
             </div>
           )}
@@ -230,7 +230,18 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
       )}
 
       {/* Chart */}
-      <div ref={chartContainerRef} style={{ width: '100%', height: '280px' }} />
+      <div style={{ position: 'relative', width: '100%', height: '280px' }}>
+        <div ref={chartContainerRef} style={{ width: '100%', height: '100%' }} />
+        {/* K 线与成交量分隔线 */}
+        <div style={{
+          position: 'absolute',
+          left: 0, right: 0,
+          top: '85%',
+          height: '1px',
+          background: 'rgba(0, 0, 0, 0.12)',
+          pointerEvents: 'none',
+        }} />
+      </div>
     </div>,
     document.body
   )
