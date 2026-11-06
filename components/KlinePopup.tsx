@@ -3,6 +3,7 @@ import { createPortal } from 'react-dom'
 import type { HKStockQuote } from '@/types/market'
 import { computeTooltipPosition } from '@/lib/tooltip-position'
 import type { KlineItem } from '@/hooks/useKlinePrefetch'
+import IntradaySparkline from './IntradaySparkline'
 
 interface KlinePopupProps {
   stock: HKStockQuote | null
@@ -208,24 +209,29 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
         )}
       </div>
 
-      {/* Info */}
+      {/* Info + 分时缩略图 */}
       {stock && (
-        <div className="px-2.5 pt-2 pb-1.5 border-b border-black/[0.08]">
-          <div className="flex items-baseline gap-2 mb-1">
-            <span className="text-lg font-semibold text-gray-900">{stock.price.toFixed(2)}</span>
-            <span className={`text-[13px] font-medium ${stock.changePercent >= 0 ? 'text-[#f63538]' : 'text-[#00e676]'}`}>
-              {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
-            </span>
-          </div>
-          <div className="flex gap-3 text-[11px] text-gray-500 leading-relaxed">
-            <span>市值 {formatMarketCap(stock.marketCap)}</span>
-            <span>每手 {stock.lotSize}股</span>
-          </div>
-          {stock.amount > 0 && (
-            <div className="flex gap-3 text-[11px] text-gray-500 leading-relaxed">
-              <span>成交额 {formatAmount(stock.amount)}</span>
+        <div className="px-2.5 pt-2 pb-1.5 border-b border-black/[0.08] flex items-start gap-3">
+          <div className="flex-1 min-w-0">
+            <div className="flex items-baseline gap-2 mb-1">
+              <span className="text-lg font-semibold text-gray-900">{stock.price.toFixed(2)}</span>
+              <span className={`text-[13px] font-medium ${stock.changePercent >= 0 ? 'text-[#f63538]' : 'text-[#00e676]'}`}>
+                {stock.changePercent >= 0 ? '+' : ''}{stock.changePercent.toFixed(2)}%
+              </span>
             </div>
-          )}
+            <div className="flex gap-3 text-[11px] text-gray-500 leading-relaxed">
+              <span>市值 {formatMarketCap(stock.marketCap)}</span>
+              <span>每手 {stock.lotSize}股</span>
+            </div>
+            {stock.amount > 0 && (
+              <div className="flex gap-3 text-[11px] text-gray-500 leading-relaxed">
+                <span>成交额 {formatAmount(stock.amount)}</span>
+              </div>
+            )}
+          </div>
+          <div style={{ flexShrink: 0, marginTop: 2 }}>
+            <IntradaySparkline code={stock.code} prevClose={stock.prevClose} />
+          </div>
         </div>
       )}
 
