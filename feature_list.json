@@ -295,6 +295,17 @@
             "app/components/TreeMap/index.vue",
             "app/components/TreeMap/Tooltip.vue"
           ]
+        },
+        {
+          "id": "7.6",
+          "name": "K 线图优化：柱体 + 成交量副图",
+          "status": "completed",
+          "priority": "high",
+          "note": "清晰蜡烛柱体、红涨绿跌、底部成交量 HistogramSeries overlay，预留均线扩展",
+          "verification": "yarn test && 肉眼确认 K 线柱体和量能副图",
+          "files_to_modify": [
+            "app/components/KlineChart/KlinePopup.vue"
+          ]
         }
       ]
     }

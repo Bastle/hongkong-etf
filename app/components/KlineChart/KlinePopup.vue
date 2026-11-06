@@ -61,14 +61,16 @@ const chartContainer = ref<HTMLDivElement>()
 const loading = ref(false)
 let chart: any = null
 let candleSeries: any = null
+let volumeSeries: any = null
 let createChartFn: any = null
 let CandlestickSeriesDef: any = null
+let HistogramSeriesDef: any = null
 let initDone = false
 
 // 浮动面板定位：确保不超出视口（V-04: 统一使用 computeTooltipPosition）
 const floatStyle = computed(() => {
   const panelW = 320
-  const panelH = 260
+  const panelH = 340
   if (typeof window === 'undefined') {
     return { left: `${props.x + 12}px`, top: `${props.y + 12}px` }
   }
@@ -99,6 +101,15 @@ async function fetchData() {
         close: item.close,
       }))
       candleSeries.setData(formatted)
+      if (volumeSeries) {
+        volumeSeries.setData(data.map((item: any) => ({
+          time: item.date,
+          value: item.volume,
+          color: item.close >= item.open
+            ? 'rgba(246, 53, 56, 0.5)'
+            : 'rgba(48, 204, 90, 0.5)',
+        })))
+      }
       chart?.timeScale().fitContent()
     }
   } catch (e) {
@@ -122,7 +133,7 @@ function initChart() {
 
   chart = createChartFn(chartContainer.value, {
     width: chartWidth,
-    height: 200,
+    height: 280,
     layout: {
       background: { color: '#1e1e2e' },
       textColor: '#999',
@@ -144,6 +155,18 @@ function initChart() {
     wickUpColor: '#f63538',
     wickDownColor: '#30cc5a',
   })
+
+  // 成交量副图（overlay 模式，底部 20% 空间）
+  if (HistogramSeriesDef) {
+    volumeSeries = chart.addSeries(HistogramSeriesDef, {
+      priceScaleId: '',
+      priceFormat: { type: 'volume' },
+      color: '#666',
+    })
+    chart.priceScale('').applyOptions({
+      scaleMargins: { top: 0.8, bottom: 0 },
+    })
+  }
 
   // 浏览器 paint 后校正宽度（防 v-show 延迟导致宽度为 0）
   requestAnimationFrame(() => {
@@ -169,6 +192,7 @@ const chartsReady = (async () => {
     const lc = await import('lightweight-charts')
     createChartFn = lc.createChart
     CandlestickSeriesDef = lc.CandlestickSeries
+    HistogramSeriesDef = lc.HistogramSeries
   }
 })()
 
@@ -270,6 +294,6 @@ watch([() => props.visible, () => props.stock?.code], async ([vis, code]) => {
 
 .kline-chart {
   width: 100%;
-  height: 200px;
+  height: 280px;
 }
 </style>
