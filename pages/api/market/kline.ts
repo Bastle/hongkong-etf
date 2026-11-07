@@ -2,6 +2,7 @@ import type { NextApiRequest, NextApiResponse } from 'next'
 import { readFileSync, existsSync } from 'fs'
 import { join } from 'path'
 import { getCache, setCache } from '@/lib/server/cache'
+import { getKV, setKV } from '@/lib/server/kv'
 import { waitForToken } from '@/lib/server/rate-limiter'
 import { fetchStocksBatch } from '@/lib/server/tencent'
 
@@ -85,8 +86,11 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
 
   let history: KlineItem[] | null = null
 
-  // 2. 本地文件（数据持久化层）
-  history = loadKlineFile(code)
+  // 2. KV 持久层（Redis，部署环境）→ 本地文件（开发环境 fallback）
+  history = await getKV<KlineItem[]>(`kline:${code}`)
+  if (!history || history.length === 0) {
+    history = loadKlineFile(code)
+  }
 
   // 3. 外部 API 兜底（仅本地文件缺失时，多端点容错）
   if (!history) {
@@ -114,7 +118,8 @@ export default async function handler(req: NextApiRequest, res: NextApiResponse)
         })).filter((item: KlineItem) => item.open > 0 && item.close > 0)
 
         if (history && history.length > 0) {
-          // 写回本地文件（供下次使用）
+          // 写入 Redis 持久层（7 天过期），本地开发同时写入文件
+          await setKV(`kline:${code}`, history, 7 * 24 * 60 * 60)
           try {
             const { writeFileSync, mkdirSync } = require('fs')
             if (!existsSync(KLINE_DIR)) mkdirSync(KLINE_DIR, { recursive: true })
