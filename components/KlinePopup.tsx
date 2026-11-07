@@ -37,6 +37,7 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
   const colorMode = state.klineColorMode
   const [loading, setLoading] = useState(false)
   const klineDataRef = useRef<KlineItem[] | null>(null)
+  const priceLinesRef = useRef<any[]>([])
 
   // 浮动面板定位
   const floatStyle = useMemo(() => {
@@ -69,8 +70,8 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
         attributionLogo: false,
       },
       grid: {
-        vertLines: { color: 'rgba(0,0,0,0.06)' },
-        horzLines: { color: 'rgba(0,0,0,0.06)' },
+        vertLines: { color: 'rgba(0,0,0,0.18)', style: 2 },
+        horzLines: { color: 'rgba(0,0,0,0.18)', style: 2 },
       },
       crosshair: { mode: 0 },
       timeScale: {
@@ -84,7 +85,11 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
           return `${String(d.getMonth() + 1).padStart(2, '0')}-${String(d.getDate()).padStart(2, '0')}`
         },
       },
-      rightPriceScale: { visible: false },
+      rightPriceScale: {
+        visible: true,
+        borderColor: 'rgba(0,0,0,0.1)',
+        scaleMargins: { top: 0.1, bottom: 0.25 },
+      },
     })
 
     chartRef.current = chart
@@ -151,6 +156,34 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
       }))
     }
 
+    // 清除旧价格线，重新标注区间极值
+    for (const line of priceLinesRef.current) {
+      candleSeriesRef.current.removePriceLine(line)
+    }
+    priceLinesRef.current = []
+
+    const maxHigh = Math.max(...data.map((d: KlineItem) => d.high))
+    const minLow = Math.min(...data.map((d: KlineItem) => d.low))
+
+    priceLinesRef.current.push(
+      candleSeriesRef.current.createPriceLine({
+        price: maxHigh,
+        color: '#f63538',
+        lineWidth: 1,
+        lineStyle: 2,
+        axisLabelVisible: false,
+        title: `最高 ${maxHigh.toFixed(2)}`,
+      }),
+      candleSeriesRef.current.createPriceLine({
+        price: minLow,
+        color: '#30cc5a',
+        lineWidth: 1,
+        lineStyle: 2,
+        axisLabelVisible: false,
+        title: `最低 ${minLow.toFixed(2)}`,
+      })
+    )
+
     chartRef.current?.timeScale().fitContent()
   }, [])
 
@@ -161,7 +194,13 @@ export default function KlinePopup({ stock, visible, x, y, cachedData, onClose }
     setLoading(true)
 
     // 立即清除旧数据，避免切换股票时残留
-    if (candleSeriesRef.current) candleSeriesRef.current.setData([])
+    if (candleSeriesRef.current) {
+      candleSeriesRef.current.setData([])
+      for (const line of priceLinesRef.current) {
+        candleSeriesRef.current.removePriceLine(line)
+      }
+      priceLinesRef.current = []
+    }
     if (volumeSeriesRef.current) volumeSeriesRef.current.setData([])
     klineDataRef.current = null
 
