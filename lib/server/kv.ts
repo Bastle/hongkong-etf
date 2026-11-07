@@ -16,10 +16,16 @@ function getRedis(): Redis | null {
  */
 export async function getKV<T>(key: string): Promise<T | null> {
   const client = getRedis()
-  if (!client) return null
+  if (!client) {
+    console.log('[KV] Redis 未配置，跳过读取:', key)
+    return null
+  }
   try {
-    return await client.get<T>(key)
-  } catch {
+    const result = await client.get<T>(key)
+    console.log(`[KV] 读取 ${key}: ${result ? '命中' : '未命中'}`)
+    return result
+  } catch (e) {
+    console.error(`[KV] 读取失败 ${key}:`, e)
     return null
   }
 }
@@ -30,14 +36,18 @@ export async function getKV<T>(key: string): Promise<T | null> {
  */
 export async function setKV(key: string, value: unknown, ttlSeconds?: number): Promise<void> {
   const client = getRedis()
-  if (!client) return
+  if (!client) {
+    console.log('[KV] Redis 未配置，跳过写入:', key)
+    return
+  }
   try {
     if (ttlSeconds) {
       await client.set(key, value, { ex: ttlSeconds })
     } else {
       await client.set(key, value)
     }
-  } catch {
-    // 静默失败，不影响主流程
+    console.log(`[KV] 写入成功 ${key}${ttlSeconds ? ` (TTL ${ttlSeconds}s)` : ''}`)
+  } catch (e) {
+    console.error(`[KV] 写入失败 ${key}:`, e)
   }
 }
